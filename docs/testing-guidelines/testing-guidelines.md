@@ -84,20 +84,20 @@ When running tests in this way, be sure that you have started PowerShell with `-
 environment is not the default or has any customization.
 
 For example, to run all the Pester tests for CI (assuming you are at the root of the PowerShell repo):
-```PowerShell
+```powershell
 Import-Module ./build.psm1
 Start-PSPester
 ```
 If you wish to run specific tests, that is possible as well:
-```PowerShell
+```powershell
 Start-PSPester -Directory test/powershell/engine/Api
 ```
 Or a specific Pester test file:
-```PowerShell
+```powershell
 Start-PSPester -Directory test/powershell/engine/Api -Test XmlAdapter.Tests.Api
 ```
 If you added a `Feature` test and not a `CI` test, then you would specify the tag:
-```PowerShell
+```powershell
 Start-PSPester -Path ./myTest.ps1 -Tag Feature
 ```
 
@@ -108,7 +108,7 @@ Two helper functions are part of the build.psm1 module to help with that:
 * `Get-PSPesterFailure` will parse the NUnit test result log and return PowerShell objects for each failure so you can do additional filtering, sorting, grouping, etc...
 * `Format-PSPesterFailure` will call `Get-PSPesterFailure` if no parameters are provided and show just the failures at the console simliar to what Pester displays
 
-```PowerShell
+```powershell
 Start-PSPester    # summary shows failures
 Format-PSPesterFailure
 ```

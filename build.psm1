@@ -700,8 +700,12 @@ function Get-PSPesterFailure {
         foreach ($failureTest in $failureTests)
         {
             $totalFailures++
-            $failure = New-Object -TypeName PSCustomObject -Property @{SuiteName=$failureSuite.Name;TestDescription=$failureTest.Description;
-                FailMessage=$failureTest.failure.message;FailStack=$failuretest.failure.'stack-trace'}
+            $failure = New-Object -TypeName PSCustomObject -Property @{
+                SuiteName=$failureSuite.Name;
+                TestDescription=$failureTest.Description;
+                FailMessage=$failureTest.failure.message;
+                FailStack=$failuretest.failure.'stack-trace'
+            }
             $failure.PSTypeNames.Insert(0,"Pester.Failure")
             $failure
         }
