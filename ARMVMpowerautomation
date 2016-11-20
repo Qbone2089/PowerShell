@@ -1,0 +1,44 @@
+workflow powerautomation
+{
+#get Variables from the Automation Account, Tenant ID, ServicePrincipal credentials, subscription ID
+$tenantid = Get-AutomationVariable -Name 'Tenant ID'	
+$cred = Get-AutomationPSCredential -Name 'powerautomation'
+$Subid = Get-AutomationVariable -Name 'Subscription ID'
+#DateTime variables needed, i have added 15 to the current_time_forward stamp to allow for a delay in the start of the job
+#The Delay to current_time_past was for testing purposes if i wanted to execute the job early manualy.
+$addtime = New-TimeSpan -Minutes 15
+$subtracttime = New-TimeSpan -Minutes -15
+$current_date = (Get-Date).ToShortDateString()
+$current_time_forward = (get-date) + $addtime
+current_time_past = (get-date) + $subtracttime
+#Login to azure with serviceprincipal
+$null = login-AzureRMAccount -ServicePrincipal -Tenant $tenantId -SubscriptionId $SubId -Credential $cred -ErrorAction Stop
+
+$vms = get-azurermvm
+#For each VM in parallel, this is done to stop or start all the VM's at the same time
+	foreach -Parallel($vm in $vms)
+	{
+		sequence
+		{
+		#Get the tags from the VM and convert strings to datetime varialble types
+			$tags = (Get-AzureRmVM -Name $vm.Name -ResourceGroupName $vm.ResourceGroupName ).Tags
+			$shutdowntime = [datetime]::ParseExact($tags.shutdowntime,"HHmm", [System.Globalization.CultureInfo]::CurrentCulture)
+			$startuptime = [datetime]::ParseExact($tags.startuptime,"HHmm", [System.Globalization.CultureInfo]::CurrentCulture)
+			$pausestart = [datetime]::ParseExact($tags.pauseautomationstart,"dd-MM-yyyy", [System.Globalization.CultureInfo]::CurrentCulture)
+			$pausesend = [datetime]::ParseExact($tags.pauseautomationend,"dd-MM-yyyy", [System.Globalization.CultureInfo]::CurrentCulture)
+		#Validate that the VM is not Excluded from using Pausestart and Pauseend dates.
+			if (-not ($current_date.Date -ge $pausestart.date -and $current_date.date -le $pausesend.Date))
+			{
+			#Validate if shutdown is allowed and if its time to stop the VM
+				if($tags.shutdown -eq "true" -and ($shutdowntime -ge current_time_past -and $shutdowntime -le $current_time_forward))
+				{
+				Stop-AzureRmVM -Name $vm.name -ResourceGroupName $vm.ResourceGroupName -Force
+				}
+				if ($tags.startup -eq "true" -and ($startuptime -ge current_time_past -and $startuptime -le $current_time_forward))
+				{
+				Start-AzureRmVM -Name $vm.name -ResourceGroupName $vm.ResourceGroupName
+				}
+			}
+		}			 
+	}
+}
